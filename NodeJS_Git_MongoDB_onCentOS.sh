@@ -17,9 +17,18 @@ mkdir -p $WEBROOT_DIR/default
 echo "Updating OS to the latest version"
 yum update -y
 
-##Install Git## 
+##Install Git##
 echo "Installing Git"
 yum -y install git
+
+##Install NginX and Start the service##
+echo "Downloading and installing NGINX repository"
+wget -P $TEMP_DIR http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+rpm -ivh $TEMP_DIR/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+yum -y install nginx
+echo "Starting NGINX service"
+service nginx start
+chkconfig nginx on
 
 ##Installing MongoDB instead##
 echo "Installing MongoDB"
@@ -45,3 +54,24 @@ cd node-v0.10.26
 ./configure
 make
 make install
+
+npm install supervisor -g
+npm install forever -g
+
+############# NGINX CONF ############
+vi /etc/nginx/conf.d/virtual.conf  
+server {
+    listen       0.0.0.0:80;
+    server_name  107.170.79.107;
+    root /webroot/NodeChat;
+    access_log  /var/log/nginx/NodeChat.log;
+
+    location / {
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header HOST $http_host;
+        proxy_set_header X-NginX-Proxy true;
+
+        proxy_pass http://127.0.0.1:3000;
+        proxy_redirect off;
+    }
+}
